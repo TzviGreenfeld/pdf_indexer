@@ -31,7 +31,7 @@ def create_index_page(names_lengths):
         index.append(f"{filename:<{LINE_LENGTH - digits}}")
 
     content = "\n".join(index)
-
+    print(content)
     writer = PdfFileWriter()
     #write content
     return
@@ -48,7 +48,7 @@ def merge_files(pdf_files):
 
 
 def main(args):
-    if len(args == 1):
+    if len(args) == 1:
         print("No arguments found")
         return
 
@@ -58,7 +58,7 @@ def main(args):
         pdf_files = [file_name for file_name in os.listdir(args[1]) if file_name.lower().endswith(".pdf")]
     else:
         # files
-        pdf_files = [file_name for file_name in os.listdir(args)[:-1] if file_name.lower().endswith(".pdf")]
+        pdf_files = [file_name for file_name in args[:-1] if file_name.lower().endswith(".pdf")]
 
     merger = merge_files(pdf_files)
 
