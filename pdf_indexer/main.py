@@ -1,7 +1,6 @@
 import os
 import sys
 import pathlib
-import PyPDF2
 from PyPDF2 import PdfFileReader, PdfFileMerger, PdfFileWriter
 from fpdf import FPDF
 
