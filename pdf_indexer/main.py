@@ -3,6 +3,7 @@ import sys
 import pathlib
 import PyPDF2
 from PyPDF2 import PdfFileReader, PdfFileMerger, PdfFileWriter
+from fpdf import FPDF
 
 
 # args:
@@ -28,16 +29,19 @@ def create_index_page(names_lengths):
     index = []
     curr_page_num = 2
     for filename_length in names_lengths:
-        spaces_count = "." * (LINE_LENGTH - len(filename_length[0]) - len(str(filename_length[1] + curr_page_num)))
+        spaces_count = "-" * (LINE_LENGTH - len(filename_length[0]) - len(str(filename_length[1] + curr_page_num)))
         curr_line = filename_length[0] + spaces_count + str(curr_page_num)
         curr_page_num += filename_length[1]
         index.append(curr_line)
     content = "\n".join(index)
-    print(content)
-    # writer = PdfFileWriter()
-    # write content
-    return
-    #string tested including hebrew (eng and hebrea causes rtl ltr issue)
+    pdf = FPDF(format='A4')
+    pdf.add_page()
+    pdf.set_font("Courier", size=12)
+    pdf.multi_cell(200, 10, txt=content, align="C")
+    pdf.output("__temp_index_file__.pdf")
+    return "__temp_index_file__.pdf"
+    # string tested including hebrew (eng and hebrea causes rtl ltr issue)
+
 
 def merge_files(pdf_files):
     merger = PdfFileMerger()
@@ -61,16 +65,24 @@ def main(args):
         # files
         pdf_files = [file_name for file_name in args[:-1] if file_name.lower().endswith(".pdf")]
 
-    # merger = merge_files(pdf_files)
+    print("Merging order:")
+    print("\n".join(pdf_files))
+    if input("Reverse order? (y/n)").lower() == 'y':
+        pdf_files.reverse()
+        print("Reversed.")
+
     index_page = create_index_page(extract_length(pdf_files))
+    merger = merge_files(pdf_files)
+    merger.merge(0, index_page)
 
-    # merger.merge(0, index_page)
+    output_name = args[-1]
+    output_name = output_name + ".pdf" if not output_name.endswith(".pdf") else output_name
 
-    # output_name = args[-1]
-    # output_name = output_name + ".pdf" if not output_name.endwith(".pdf") else output_name
+    merger.write(output_name)
+    merger.close()
 
-    # merger.write(output_name)
-    # merger.close()
+    if os.path.exists(index_page):
+        os.remove(index_page)
 
 
 if __name__ == '__main__':
