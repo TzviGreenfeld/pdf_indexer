@@ -64,6 +64,8 @@ def main(args):
         # files
         pdf_files = [file_name for file_name in args[:-1] if file_name.lower().endswith(".pdf")]
 
+    pdf_files = sorted(pdf_files)
+    
     print("Merging order:")
     print("\n".join(pdf_files))
     if input("Reverse order? (y/n)").lower() == 'y':
