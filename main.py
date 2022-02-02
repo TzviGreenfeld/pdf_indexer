@@ -1,12 +1,25 @@
 import os
 import sys
-from PyPDF2 import PdfFileReader, PdfFileMerger
+from PyPDF2 import PdfFileReader, PdfFileMerger, PdfFileWriter
 from fpdf import FPDF
-
 
 # args:
 # <file1.pdf> <file2.pdf> ... <filen.pdf> outputFileName.pdf
 # or: <folderPath> outputFileName.pdf
+
+LINE_LENGTH = 60
+LINE_WIDTH = 200
+LINE_HEIGHT = 10
+
+
+def remove_temp_files(filename):
+    """
+    clean temporary files
+    :param filename: temp file to delete
+    :return:
+    """
+    if os.path.exists(filename):
+        os.remove(filename)
 
 
 # returns list of tuples (fileName, fileLength)
@@ -25,17 +38,18 @@ def extract_data(pdf_files):
 
 # generates the index page according to list of tuples (fileName, fileLength)
 def create_table_of_content(files_data):
-    LINE_LENGTH = 60
-    index = []
+    tale_of_content = []
     pages_nums = []
+    index = []
     curr_page_num = 2
 
-    for filename_length in files_data:
-        spaces_count = "-" * (LINE_LENGTH - len(filename_length[0]) - len(str(filename_length[1] + curr_page_num)))
-        curr_line = filename_length[0] + spaces_count + str(curr_page_num)
-        curr_page_num += filename_length[1]
+    for name_and_len in files_data:
+        spaces_count = "-" * (LINE_LENGTH - len(name_and_len[0]) - len(str(name_and_len[1] + curr_page_num)))
+        curr_line = name_and_len[0] + spaces_count + str(curr_page_num)
+        index.append((name_and_len[0], curr_page_num))
         pages_nums.append(curr_page_num)
-        index.append(curr_line)
+        curr_page_num += name_and_len[1]
+        tale_of_content.append(curr_line)
 
     # creating the table of content as temporary file
     pdf = FPDF(format='A4')
@@ -43,15 +57,20 @@ def create_table_of_content(files_data):
     pdf.set_font("Courier", size=12)
 
     # write text line by line
-    for line_num, line in enumerate(index):
-        pdf.cell(200, 10, txt=line, align="C", ln=line_num + 1)
+    for line_num, line in enumerate(tale_of_content):
+        pdf.cell(LINE_WIDTH, LINE_HEIGHT, txt=line, align="C", ln=2)
 
     temp_file_name = "__temp_index_file__.pdf"
     pdf.output(temp_file_name)
-    return temp_file_name
+
+    return temp_file_name, index
 
 
 def merge_files(pdf_files):
+    """
+    :param pdf_files: list of pdf file names to merge
+    :return: PyPdf2.PdfFileMerger object with the concatenated files
+    """
     merger = PdfFileMerger()
 
     for pdf in pdf_files:
@@ -60,14 +79,22 @@ def merge_files(pdf_files):
     return merger
 
 
-def add_links(file, rectangles_and_dest):
-    # link = pdf.add_link()
-    # pdf.set_link(link, page=pages_nums[line_num]) // this page num dosent exists yet, need to change program flow
-    pass
-
-
 def add_bookmarks(file, files_data):
-    pass
+    output = PdfFileWriter()
+    with open(file, 'rb+') as f:
+        generated_file = PdfFileReader(f)  # open input
+
+        for i in range(generated_file.getNumPages()):
+            output.addPage(generated_file.getPage(i))  # insert page
+
+        for (name, dest) in files_data:
+            output.addBookmark(name, dest - 1, parent=None)
+
+        with open("bookmarked_" + file, "wb+") as out:
+            output.write(out)
+
+    remove_temp_files(file)
+    return
 
 
 def add_title(page, title):
@@ -96,26 +123,22 @@ def main(args):
     #     print("Reversed.") // commented for testing
 
     # init
-    index_page = create_table_of_content(extract_data(pdf_files))
+    table_of_content, index = create_table_of_content(extract_data(pdf_files))
     merger = merge_files(pdf_files)
-    merger.merge(0, index_page)
+    merger.merge(0, table_of_content)
 
     # save and exit:
     output_name = args[-1]
     output_name = output_name + ".pdf" if not output_name.endswith(".pdf") else output_name
-
     merger.write(output_name)
     merger.close()
 
-    # clean temp files
-    if os.path.exists(index_page):
-        os.remove(index_page)
+    # add bookmarks?
+    if True:
+        add_bookmarks(output_name, index)
 
+    remove_temp_files(table_of_content)
     return
-
-
-def remove_temp_files():
-    pass
 
 
 if __name__ == '__main__':
