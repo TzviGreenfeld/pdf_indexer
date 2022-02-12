@@ -14,9 +14,8 @@ LINE_HEIGHT = 10
 
 def remove_temp_files(filename):
     """
-    clean temporary files
-    :param filename: temp file to delete
-    :return:
+    deletes temporary files
+    :param filename: file path to delete
     """
     if os.path.exists(filename):
         os.remove(filename)
@@ -118,9 +117,9 @@ def main(args):
 
     print("Merging order:")
     print("\n".join(pdf_files))
-    # if input("Reverse order? (y/n)\t").lower() == 'y':
-    #     pdf_files.reverse()
-    #     print("Reversed.") // commented for testing
+    if input("Reverse order? (y/n)\t").lower() == 'y':
+        pdf_files.reverse()
+        print("Reversed.") 
 
     # init
     table_of_content, index = create_table_of_content(extract_data(pdf_files))
