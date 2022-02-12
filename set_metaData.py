@@ -6,10 +6,11 @@ _Subject = None
 _Keywords = None
 _Producer = None
 _Creator = None
-
+input = ""
+outpt = ""
 
 if __name__ == '__main__':
-    pdf_reader = PdfReader('bookmarked_calculus.pdf')
+    pdf_reader = PdfReader(input)
     metadata = PdfDict(Author= _Author,
                         Title= _Title,
                         Subject= _Subject,
@@ -17,4 +18,4 @@ if __name__ == '__main__':
                         Producer= _Producer,
                         Creator= _Creator)
     pdf_reader.Info.update(metadata)
-    PdfWriter().write('lectures.pdf', pdf_reader)
+    PdfWriter().write(output, pdf_reader)
