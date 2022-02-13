@@ -133,6 +133,7 @@ def main(args):
     merger.close()
 
     # add bookmarks?
+    # TODO: implement user chioce
     if True:
         add_bookmarks(output_name, index)
 
