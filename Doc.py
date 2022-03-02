@@ -22,13 +22,13 @@ class Doc:
     LINE_HEIGHT = 10
     TEMP_FILE = "__temp__.pdf"
 
-    def __init__(self, files=None, dir=None, toc_page=True, links=True, bookmarks=True):
+    def __init__(self, files=None, files_dir=None, toc_page=True, links=True, bookmarks=True):
 
         # init
-        if dir is None:
+        if files_dir is None:
             self.files = files
         else:
-            self.files = [dir + "/" + file_name for file_name in os.listdir(dir) if
+            self.files = [files_dir + "/" + file_name for file_name in os.listdir(files_dir) if
                           file_name.lower().endswith(".pdf")]
 
         self.files_data = self.extract_data(self.files)
@@ -40,6 +40,7 @@ class Doc:
 
         self.merger = self.merge_files()
 
+        self.bookmarked = None
         if bookmarks:
             self.add_bookmarks()
 
@@ -47,10 +48,12 @@ class Doc:
 
     def save(self, output_name):
         remove_temp_files(self.TEMP_FILE)
-        output_name = output_name + ".pdf" if not output_name.endswith(".pdf") else output_name
 
-        self.merger.write(output_name)
-        self.merger.close()
+        if self.bookmarked is not None:
+            os.rename(self.bookmarked, output_name)
+        else:
+            self.merger.write(output_name)
+            self.merger.close()
 
     def extract_data(self, files):
         """
@@ -116,22 +119,23 @@ class Doc:
 
         return merger
 
-    def add_bookmarks(self, ):
+    def add_bookmarks(self):
         output = PdfFileWriter()
-        with open(self.toc_page, 'rb+') as f:
-            generated_file = PdfFileReader(f)  # open input
+        temp = "bookmark.pdf"
+        self.save(temp)
+        with open(temp, 'rb+') as f:
+            generated_file = PdfFileReader(temp)  # open input
 
             for i in range(generated_file.getNumPages()):
                 output.addPage(generated_file.getPage(i))  # insert page
 
             for (name, dest) in self.files_data:
                 output.addBookmark(name, dest - 1, parent=None)
-
-            with open("bookmarked_" + self.toc_page, "wb+") as out:
+            self.bookmarked = temp
+            with open(temp, "wb+") as out:
                 output.write(out)
 
-        remove_temp_files(self.toc_page)
-        return
+        return temp
 
     # def add_links(self):
     #     output = PdfFileWriter()
@@ -174,7 +178,7 @@ def main(args):
     # get files or folder
     if len(args) == 3:
         # folder
-        doc = Doc(dir=args[1])
+        doc = Doc(files_dir=args[1])
     else:
         # files
         pdf_files = [file_name for file_name in args[:-1] if file_name.lower().endswith(".pdf")]
