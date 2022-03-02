@@ -154,14 +154,14 @@ class Doc:
     #     remove_temp_files(file)
     #     return
 
-    def set_metadata(self, _Author=None, _Title=None, _Subject=None, _Keywords=None, _Producer=None, _Creator=None):
+    def set_metadata(self, author=None, title=None, subject=None, keywords=None, producer=None, creator=None):
         pdf_reader = PdfReader(self.generated_file)
-        metadata = PdfDict(Author=_Author,
-                           Title=_Title,
-                           Subject=_Subject,
-                           Keywords=_Keywords,
-                           Producer=_Producer,
-                           Creator=_Creator)
+        metadata = PdfDict(Author=author,
+                           Title=title,
+                           Subject=subject,
+                           Keywords=keywords,
+                           Producer=producer,
+                           Creator=creator)
         pdf_reader.Info.update(metadata)
         PdfWriter().write(self.generated_file, pdf_reader)
 
@@ -184,6 +184,7 @@ def main(args):
     output_name = output_name + ".pdf" if not output_name.endswith(".pdf") else output_name
 
     doc.save(output_name)
+
 
 if __name__ == '__main__':
     main(sys.argv)
