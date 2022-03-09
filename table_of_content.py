@@ -1,3 +1,5 @@
+import os
+
 from PyPDF2 import PdfFileReader
 from tempfile import TemporaryFile
 from fpdf import FPDF
@@ -73,8 +75,15 @@ class TableOfContent:
             curr_link_index += 1
 
     def save(self):
+        name = self.file_name
         self.pdf.page = self.file_len
-        self.pdf.output(self.file_name)
+        self.pdf.output()
+        self.set_metadata(author=None,
+                          title=name[:name.find(".pdf")],
+                          subject=None,
+                          keywords=None,
+                          producer="https://github.com/TzviGreenfeld/pdf_indexer",
+                          creator="🔥Tzvigr🔥")
 
     def merge(self):
         writer = PdfWriter()
@@ -96,10 +105,13 @@ class TableOfContent:
         # save output
         generated_toc_file.write(self.file_name)
 
+    def bookmark(self):
+        for entry in self.index.items():
+            filename, page_num = entry
+
 
 if __name__ == '__main__':
-    _files = ["sample/a.pdf", "sample/b.pdf"]
+    folder = "sample/"
+    _files = [os.path.join(folder, file) for file in os.listdir(folder)]
 
     toc = TableOfContent(_files, "out.pdf")
-
-
