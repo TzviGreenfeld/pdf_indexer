@@ -52,7 +52,7 @@ def create_table_of_content(files_data):
 
     # creating the table of content as temporary file
     pdf = FPDF(format='A4')
-    pdf.add_page()
+
     pdf.set_font("Courier", size=12) # TODO: fix allignment for non fixed width fonts (split to 2 rects?)
 
     # write text line by line
