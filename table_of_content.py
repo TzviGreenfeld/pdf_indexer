@@ -1,7 +1,7 @@
-from PyPDF2 import PdfFileReader, PdfFileWriter, PdfFileMerger
+from PyPDF2 import PdfFileReader
 from tempfile import TemporaryFile
 from fpdf import FPDF
-from pdfrw import PageMerge, PdfReader, PdfWriter
+from pdfrw import PageMerge, PdfReader, PdfWriter, PdfDict
 
 
 class TableOfContent:
@@ -17,15 +17,17 @@ class TableOfContent:
         self.files = files
         self.file_len = -1
         self.pages_data = self.extract_data()
+        # create_table_of_content also updates self.file_len
         self.index = self.create_table_of_content()
 
         for i in range(self.file_len):
             self.pdf.add_page()
 
         self.write_toc_page()
+
         if file_name is not None:
             self.file_name = file_name
-            self.save()
+            self.merge()
 
     def create_table_of_content(self):
         curr_page_num = 2
@@ -34,7 +36,7 @@ class TableOfContent:
             index.update({name: curr_page_num})
             curr_page_num += file_len
 
-        self.file_len = curr_page_num
+        self.file_len = curr_page_num - 1
         return index
 
     def extract_data(self):
@@ -74,6 +76,26 @@ class TableOfContent:
         self.pdf.page = self.file_len
         self.pdf.output(self.file_name)
 
+    def merge(self):
+        writer = PdfWriter()
+        for path in self.files:
+            reader = PdfReader(path)
+            writer.addpages(reader.pages)
+
+        self.save()
+        # open generated file with pdfrw
+        temp_reader = PdfReader(self.file_name)
+        generated_toc_file = PdfWriter()
+        generated_toc_file.addpages(temp_reader.pages)
+
+        # take a page from merged files and paste it on the generated file
+        for page_num, page in enumerate(writer.pagearray):
+            # page = PdfReader("merged.pdf").pages[0]
+            PageMerge(generated_toc_file.pagearray[page_num + 1]).add(page, prepend=True).render()
+
+        # save output
+        generated_toc_file.write(self.file_name)
+
 
 if __name__ == '__main__':
     _files = ["sample/a.pdf", "sample/b.pdf"]
@@ -81,15 +103,3 @@ if __name__ == '__main__':
     toc = TableOfContent(_files, "out.pdf")
 
 
-    # merge test
-    def merge(files):
-        merger = PdfFileMerger()
-
-        for pdf in files:
-            merger.append(pdf)
-        output_name = "merged.pdf"
-        merger.write(output_name)
-        merger.close()
-
-
-    merge(_files)
