@@ -1,9 +1,7 @@
 import os
-
-from PyPDF2 import PdfFileReader
 from tempfile import TemporaryFile
 from fpdf import FPDF
-from pdfrw import PageMerge, PdfReader, PdfWriter, PdfDict
+from pdfrw import PageMerge, PdfReader, PdfWriter, PdfDict, IndirectPdfDict
 
 
 class TableOfContent:
@@ -16,6 +14,7 @@ class TableOfContent:
         will only save file if file_name is not None
         """
         self.pdf = FPDF(format='A4')
+        self.pdf.set_creator("https://github.com/TzviGreenfeld/pdf_indexer")
         self.files = files
         self.file_len = -1
         self.pages_data = self.extract_data()
@@ -29,6 +28,7 @@ class TableOfContent:
 
         if file_name is not None:
             self.file_name = file_name
+            self.pdf.set_title(file_name[:str(file_name).find(".pdf")])
             self.merge()
 
     def create_table_of_content(self):
@@ -44,13 +44,10 @@ class TableOfContent:
     def extract_data(self):
         files_data = []
         for name in self.files:
-            with open(name, 'rb') as f:
-                curr_file = PdfFileReader(f)
-                curr_len = curr_file.numPages
-
-                # get file name without extension and path
-                curr_name = name[name.rfind("/") + 1: name.find('.pdf')]
-                files_data.append((curr_name, curr_len))
+            curr_len = len(PdfReader(fname=name).pages)
+            # get file name without extension and path
+            curr_name = name[name.rfind("/") + 1: name.find('.pdf')]
+            files_data.append((curr_name, curr_len))
         return files_data
 
     def write_toc_page(self):
@@ -75,15 +72,8 @@ class TableOfContent:
             curr_link_index += 1
 
     def save(self):
-        name = self.file_name
         self.pdf.page = self.file_len
-        self.pdf.output()
-        self.set_metadata(author=None,
-                          title=name[:name.find(".pdf")],
-                          subject=None,
-                          keywords=None,
-                          producer="https://github.com/TzviGreenfeld/pdf_indexer",
-                          creator="🔥Tzvigr🔥")
+        self.pdf.output(self.file_name)
 
     def merge(self):
         writer = PdfWriter()
@@ -103,6 +93,11 @@ class TableOfContent:
             PageMerge(generated_toc_file.pagearray[page_num + 1]).add(page, prepend=True).render()
 
         # save output
+        # set metadata that was lost when moving from fpdf to pdfrw
+        generated_toc_file.trailer.Info = IndirectPdfDict(
+            Title=self.pdf.title,
+            Creator=self.pdf.creator
+        )
         generated_toc_file.write(self.file_name)
 
     def bookmark(self):
@@ -115,3 +110,5 @@ if __name__ == '__main__':
     _files = [os.path.join(folder, file) for file in os.listdir(folder)]
 
     toc = TableOfContent(_files, "out.pdf")
+
+
