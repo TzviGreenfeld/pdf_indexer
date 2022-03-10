@@ -2,7 +2,13 @@ import os
 import sys
 from PyPDF2 import PdfFileReader, PdfFileMerger, PdfFileWriter
 from fpdf import FPDF
+import os
+import subprocess, sys
 
+
+def show(filename):
+    opener = "open" if sys.platform == "darwin" else "xdg-open"
+    subprocess.call([opener, filename])
 # args:
 # <file1.pdf> <file2.pdf> ... <filen.pdf> outputFileName.pdf
 # or: <folderPath> outputFileName.pdf
@@ -143,3 +149,6 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv)
+
+    #adding bookmarks
+    FPDF.Bookm

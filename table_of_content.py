@@ -1,12 +1,14 @@
 import os
 from tempfile import TemporaryFile
+
+from PyPDF2 import PdfFileWriter, PdfFileReader
 from fpdf import FPDF
 from pdfrw import PageMerge, PdfReader, PdfWriter, PdfDict, IndirectPdfDict
 
 
 class TableOfContent:
     LINE_LENGTH = 60
-    LINE_WIDTH = 200
+    LINE_WIDTH = 180
     LINE_HEIGHT = 10
 
     def __init__(self, files: list, file_name=None):
@@ -31,11 +33,13 @@ class TableOfContent:
             self.pdf.set_title(file_name[:str(file_name).find(".pdf")])
             self.merge()
 
+        return
+
     def create_table_of_content(self):
         curr_page_num = 2
         index = {}
-        for (name, file_len) in self.pages_data:
-            index.update({name: curr_page_num})
+        for (file_name, file_len) in self.pages_data:
+            index.update({file_name: curr_page_num})
             curr_page_num += file_len
 
         self.file_len = curr_page_num - 1
@@ -43,37 +47,63 @@ class TableOfContent:
 
     def extract_data(self):
         files_data = []
-        for name in self.files:
-            curr_len = len(PdfReader(fname=name).pages)
+        for file_name in self.files:
+            curr_len = len(PdfReader(fname=file_name).pages)
             # get file name without extension and path
-            curr_name = name[name.rfind("/") + 1: name.find('.pdf')]
+            curr_name = file_name[file_name.rfind("/") + 1: file_name.find('.pdf')]
             files_data.append((curr_name, curr_len))
         return files_data
 
     def write_toc_page(self):
+
+        def dash(f_name, page):
+            # adds dashed line between the
+            x1 = self.pdf.get_string_width(f_name) + self.pdf.l_margin + 5
+            y = self.pdf.get_y() + self.LINE_HEIGHT / 2
+            x2 = self.LINE_WIDTH - self.pdf.get_string_width(page) + self.pdf.r_margin - 5
+            self.pdf.dashed_line(x1, y, x2, y)
+
+        # links setup
         links = []
         for entry in self.index.items():
             filename, page_num = entry
-            # links setup
             self.pdf.page = page_num
             links.append(self.pdf.add_link())
 
-        # write text line by line
+        # page title
         self.pdf.page = 1
-        self.pdf.set_font("Courier", size=30)
-        curr_link_index = 0
-        for entry in self.index.items():
+        self.pdf.set_font("Arial", size=30)
+        self.pdf.cell(self.LINE_WIDTH, 3 * self.LINE_HEIGHT, txt="Table of content", align="C", ln=1)
+
+        # write text line by line setup
+        self.pdf.set_font("Courier", size=18)
+        for curr_link_index, entry in enumerate(self.index.items()):
             filename, page_num = entry
-            # links
+
+            # write toc text to pdf with links
             curr_link = links[curr_link_index]
             self.pdf.set_link(curr_link, y=0.0, page=page_num)
-            self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=str(filename), align="L", ln=0, link=curr_link)
-            self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=str(page_num), align="R", ln=1, link=curr_link)
-            curr_link_index += 1
+            self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=filename, align="L", ln=0, link=curr_link,
+                          border=0, fill=0)
+            dash(filename, str(page_num))
+            self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=str(page_num), align="R", ln=1, link=curr_link,
+                          border=0, fill=0)
+
+        # credit testing
+        # credit = "created by tzvigr"
+        # self.pdf.set_font("helvetica", size=5)
+        # w = self.pdf.get_string_width(credit)
+        # self.pdf.set_text_color(230)
+        # self.pdf.set_x(self.pdf.l_margin)
+        # self.pdf.set_y(self.pdf.h )
+        # self.pdf.cell(w, self.LINE_HEIGHT, txt=credit, align="L")
+
+        return
 
     def save(self):
         self.pdf.page = self.file_len
         self.pdf.output(self.file_name)
+        return
 
     def merge(self):
         writer = PdfWriter()
@@ -99,16 +129,31 @@ class TableOfContent:
             Creator=self.pdf.creator
         )
         generated_toc_file.write(self.file_name)
+        return
 
-    def bookmark(self):
-        for entry in self.index.items():
-            filename, page_num = entry
+    def add_bookmarks(self):
+        temp = "__temp__.pdf"
+        output = PdfFileWriter()
+        if os.path.exists(self.file_name):
+            os.rename(self.file_name, temp)
+        with open(temp, 'rb+') as f:
+            file = PdfFileReader(f)  # open input
+
+            for i in range(file.getNumPages()):
+                output.addPage(file.getPage(i))  # insert page
+
+            for (name, dest) in self.index.items():
+                output.addBookmark(name, dest - 1, parent=None)
+
+            with open(self.file_name, "wb+") as out:
+                output.write(out)
+        os.remove(temp)
+        return
 
 
 if __name__ == '__main__':
     folder = "sample/"
     _files = [os.path.join(folder, file) for file in os.listdir(folder)]
-
-    toc = TableOfContent(_files, "out.pdf")
-
-
+    name = "out.pdf"
+    toc = TableOfContent(_files, name)
+    toc.add_bookmarks()
