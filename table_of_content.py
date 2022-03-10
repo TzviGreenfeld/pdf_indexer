@@ -7,6 +7,10 @@ from fpdf import FPDF
 from pdfrw import PageMerge, PdfReader, PdfWriter, PdfDict, IndirectPdfDict
 
 
+def is_hebrew(s):
+    return any("\u0590" <= c <= "\u05EA" for c in s)
+
+
 class TableOfContent:
     LINE_LENGTH = 60
     LINE_WIDTH = 180
@@ -17,6 +21,7 @@ class TableOfContent:
         will only save file if file_name is not None
         """
         self.pdf = FPDF(format='A4')
+        self.pdf.add_font('SansHeb', '', 'IBMPlexSansHebrew-ExtraLight.ttf', uni=True)  # hebrew
         self.files = files
         self.file_len = -1
         self.pages_data = self.extract_data()
@@ -65,6 +70,14 @@ class TableOfContent:
             x2 = self.LINE_WIDTH - self.pdf.get_string_width(page) + self.pdf.r_margin - 5
             self.pdf.link(x1, y, x2 - x1, self.LINE_HEIGHT / 3, link)
             self.pdf.dashed_line(x1, y, x2, y)
+            return
+
+        def write_hebrew(f_name, link):
+            self.pdf.set_font("SansHeb", size=12)  # hebrew
+            self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=f_name[::-1], align="L", ln=0, link=link,
+                          border=0, fill=0)
+            self.pdf.set_font("Courier", size=18)
+            return
 
         # links setup
         links = []
@@ -86,8 +99,12 @@ class TableOfContent:
             # write toc text to pdf with links
             curr_link = links[curr_link_index]
             self.pdf.set_link(curr_link, y=0.0, page=page_num)
-            self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=filename, align="L", ln=0, link=curr_link,
-                          border=0, fill=0)
+
+            if is_hebrew(filename):
+                write_hebrew(filename, curr_link)
+            else:
+                self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=filename, align="L", ln=0, link=curr_link,
+                              border=0, fill=0)
             dash(filename, str(page_num), curr_link)
             self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=str(page_num), align="R", ln=1, link=curr_link,
                           border=0, fill=0)
