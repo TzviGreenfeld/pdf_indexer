@@ -58,11 +58,12 @@ class TableOfContent:
 
     def write_toc_page(self):
 
-        def dash(f_name, page):
+        def dash(f_name, page, link):
             # adds dashed line between the
             x1 = self.pdf.get_string_width(f_name) + self.pdf.l_margin + 5
             y = self.pdf.get_y() + self.LINE_HEIGHT / 2
             x2 = self.LINE_WIDTH - self.pdf.get_string_width(page) + self.pdf.r_margin - 5
+            self.pdf.link(x1, y, x2 - x1, self.LINE_HEIGHT / 3, link)
             self.pdf.dashed_line(x1, y, x2, y)
 
         # links setup
@@ -87,7 +88,7 @@ class TableOfContent:
             self.pdf.set_link(curr_link, y=0.0, page=page_num)
             self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=filename, align="L", ln=0, link=curr_link,
                           border=0, fill=0)
-            dash(filename, str(page_num))
+            dash(filename, str(page_num), curr_link)
             self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=str(page_num), align="R", ln=1, link=curr_link,
                           border=0, fill=0)
 
