@@ -180,14 +180,7 @@ class TableOfContent:
                            Creator=creator)
         pdf_reader.Info.update(metadata)
         PdfWriter().write(self.file_name, pdf_reader)
-
-
-# if __name__ == '__main__':
-#     folder = "sample/"
-#     _files = [os.path.join(folder, file) for file in os.listdir(folder)]
-#     name = "out.pdf"
-#     toc = TableOfContent(_files, name)
-#     toc.add_bookmarks()
+        
 
 def main(args):
     if len(args) == 1:
