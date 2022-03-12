@@ -73,11 +73,12 @@ class TableOfContent:
             return
 
         def write_hebrew(f_name, link):
+            width = "_"*len(f_name)
             self.pdf.set_font("SansHeb", size=12)  # hebrew
             self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=f_name[::-1], align="L", ln=0, link=link,
                           border=0, fill=0)
             self.pdf.set_font("Courier", size=18)
-            return
+            return width
 
         # links setup
         links = []
@@ -101,11 +102,13 @@ class TableOfContent:
             self.pdf.set_link(curr_link, y=0.0, page=page_num)
 
             if is_hebrew(filename):
-                write_hebrew(filename, curr_link)
+                w = write_hebrew(filename, curr_link)
+                dash(w, str(page_num), curr_link)
             else:
                 self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=filename, align="L", ln=0, link=curr_link,
                               border=0, fill=0)
-            dash(filename, str(page_num), curr_link)
+                dash(filename, str(page_num), curr_link)
+
             self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=str(page_num), align="R", ln=1, link=curr_link,
                           border=0, fill=0)
 
