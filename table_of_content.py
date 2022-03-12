@@ -32,6 +32,7 @@ class TableOfContent:
             self.pdf.add_page()
 
         self.write_toc_page()
+        self.watermark()
 
         if file_name is not None:
             self.file_name = file_name
@@ -112,15 +113,6 @@ class TableOfContent:
             self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=str(page_num), align="R", ln=1, link=curr_link,
                           border=0, fill=0)
 
-        # credit testing
-        # credit = "created by tzvigr"
-        # self.pdf.set_font("helvetica", size=5)
-        # w = self.pdf.get_string_width(credit)
-        # self.pdf.set_text_color(230)
-        # self.pdf.set_x(self.pdf.l_margin)
-        # self.pdf.set_y(self.pdf.h )
-        # self.pdf.cell(w, self.LINE_HEIGHT, txt=credit, align="L")
-
         return
 
     def save(self):
@@ -180,6 +172,18 @@ class TableOfContent:
                            Creator=creator)
         pdf_reader.Info.update(metadata)
         PdfWriter().write(self.file_name, pdf_reader)
+
+    def watermark(self):
+        # adds watermark to the toc page
+        self.pdf.page = 1
+        link = "https://github.com/TzviGreenfeld/pdf_indexer"
+        credit = "created with pdf-indexer"
+        self.pdf.set_font("helvetica", size=10)
+        w = self.pdf.get_string_width(credit)
+        self.pdf.set_text_color(230)
+        self.pdf.set_x(self.pdf.l_margin)
+        self.pdf.set_y(self.pdf.t_margin)
+        self.pdf.cell(w, self.LINE_HEIGHT, txt=credit, align="C", link=link)
         
 
 def main(args):
