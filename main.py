@@ -17,7 +17,7 @@ low priority:
     - add page numbers
 
 """
-
+FONT_SIZE = 13
 
 
 def is_hebrew(s):
@@ -27,7 +27,7 @@ def is_hebrew(s):
 class TableOfContent:
     LINE_LENGTH = 60
     LINE_WIDTH = 180
-    LINE_HEIGHT = 10
+    LINE_HEIGHT = 6
 
     def __init__(self, files: list, file_name=None, bookmark=True):
         """"
@@ -91,7 +91,7 @@ class TableOfContent:
             self.pdf.set_font("SansHeb", size=12)  # hebrew
             self.pdf.cell(self.LINE_WIDTH / 2, self.LINE_HEIGHT, txt=f_name[::-1], align="L", ln=0, link=link,
                           border=0, fill=0)
-            self.pdf.set_font("Courier", size=18)
+            self.pdf.set_font("Courier", size=FONT_SIZE)
             return width
 
         # links setup
@@ -103,11 +103,11 @@ class TableOfContent:
 
         # page title
         self.pdf.page = 1
-        self.pdf.set_font("Arial", size=30)
+        self.pdf.set_font("Arial", size=15)
         self.pdf.cell(self.LINE_WIDTH, 3 * self.LINE_HEIGHT, txt="Table of content", align="C", ln=1)
 
         # write text line by line setup
-        self.pdf.set_font("Courier", size=18)
+        self.pdf.set_font("Courier", size=FONT_SIZE)
         for curr_link_index, entry in enumerate(self.index.items()):
             filename, page_num = entry
 
@@ -212,8 +212,8 @@ def main(args):
         # files
         pdf_files = [file_name for file_name in args[:-1] if file_name.lower().endswith(".pdf")]
 
-    # # sort files
-    # pdf_files = sorted(pdf_files)
+    # sort files
+    pdf_files = sorted(pdf_files)
     #
     # print("Merging order:")
     # print("\n".join(pdf_files))
@@ -225,7 +225,9 @@ def main(args):
     output_name = output_name + ".pdf" if not output_name.endswith(".pdf") else output_name
 
     toc = TableOfContent(pdf_files, output_name)
+    # from numbering2pdf import add_numbering_to_pdf
 
+    # add_numbering_to_pdf(output_name, "2"+output_name, start_page=2, position="right")
 
 if __name__ == '__main__':
     main(sys.argv)
