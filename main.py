@@ -1,12 +1,13 @@
 import os
 import sys
 from tempfile import TemporaryFile
+import re
 
 from PyPDF2 import PdfFileWriter, PdfFileReader
 from fpdf import FPDF
 from pdfrw import PageMerge, PdfReader, PdfWriter, PdfDict, IndirectPdfDict
 
-
+from gui import FileLoader
 """
 TODO:
 page layout- currently only A4
@@ -18,8 +19,7 @@ low priority:
 
 """
 
-
-
+ENG_FONT_SIZE = 8
 def is_hebrew(s):
     return any("\u0590" <= c <= "\u05EA" for c in s)
 
@@ -34,7 +34,8 @@ class TableOfContent:
         will only save file if file_name is not None
         """
         self.pdf = FPDF(format='A4')
-        self.pdf.add_font('SansHeb', '', 'IBMPlexSansHebrew-ExtraLight.ttf', uni=True)  # hebrew
+        self.pdf.add_font(
+            'SansHeb', '', 'IBMPlexSansHebrew-ExtraLight.ttf', uni=True)  # hebrew
         self.files = files
         self.file_len = -1
         self.pages_data = self.extract_data()
@@ -71,7 +72,8 @@ class TableOfContent:
         for file_name in self.files:
             curr_len = len(PdfReader(fname=file_name).pages)
             # get file name without extension and path
-            curr_name = file_name[file_name.rfind("/") + 1: file_name.find('.pdf')]
+            curr_name = file_name[file_name.rfind(
+                "/") + 1: file_name.find('.pdf')]
             files_data.append((curr_name, curr_len))
         return files_data
 
@@ -81,7 +83,8 @@ class TableOfContent:
             # adds dashed line between the
             x1 = self.pdf.get_string_width(f_name) + self.pdf.l_margin + 5
             y = self.pdf.get_y() + self.LINE_HEIGHT / 2
-            x2 = self.LINE_WIDTH - self.pdf.get_string_width(page) + self.pdf.r_margin - 5
+            x2 = self.LINE_WIDTH - \
+                self.pdf.get_string_width(page) + self.pdf.r_margin - 5
             self.pdf.link(x1, y, x2 - x1, self.LINE_HEIGHT / 3, link)
             self.pdf.dashed_line(x1, y, x2, y)
             return
@@ -104,10 +107,11 @@ class TableOfContent:
         # page title
         self.pdf.page = 1
         self.pdf.set_font("Arial", size=30)
-        self.pdf.cell(self.LINE_WIDTH, 3 * self.LINE_HEIGHT, txt="Table of content", align="C", ln=1)
+        self.pdf.cell(self.LINE_WIDTH, 3 * self.LINE_HEIGHT,
+                      txt="Table of content", align="C", ln=1)
 
         # write text line by line setup
-        self.pdf.set_font("Courier", size=18)
+        self.pdf.set_font("Courier", size=ENG_FONT_SIZE)
         for curr_link_index, entry in enumerate(self.index.items()):
             filename, page_num = entry
 
@@ -129,6 +133,8 @@ class TableOfContent:
         return
 
     def save(self):
+        # comprass pdf
+
         self.pdf.page = self.file_len
         self.pdf.output(self.file_name)
         return
@@ -148,7 +154,8 @@ class TableOfContent:
         # take a page from merged files and paste it on the generated file
         for page_num, page in enumerate(writer.pagearray):
             # page = PdfReader("merged.pdf").pages[0]
-            PageMerge(generated_toc_file.pagearray[page_num + 1]).add(page, prepend=True).render()
+            PageMerge(
+                generated_toc_file.pagearray[page_num + 1]).add(page, prepend=True).render()
 
         # save output
         generated_toc_file.write(self.file_name)
@@ -197,12 +204,20 @@ class TableOfContent:
         self.pdf.set_x(self.pdf.l_margin)
         self.pdf.set_y(self.pdf.t_margin)
         self.pdf.cell(w, self.LINE_HEIGHT, txt=credit, align="C", link=link)
-        
+
+
+def natural_sort(file_name):
+    # clean all non alphanumeric characters
+    file_name = re.sub(r'\W+', '', file_name)
+    # Extract the numeric parts of the file name
+    numeric_parts = [int(s) for s in re.findall(r'\d+', file_name)]
+    # Split the file name into numeric and non-numeric parts
+    parts = re.split(r'(\d+)', file_name)
+    # Return a tuple containing the numeric parts and the non-numeric parts
+    return numeric_parts, parts
+
 
 def main(args):
-    if len(args) == 1:
-        print("No arguments found")
-        return
     # get files or folder
     if len(args) == 3:
         # folder
@@ -210,19 +225,25 @@ def main(args):
                      file_name.lower().endswith(".pdf")]
     else:
         # files
-        pdf_files = [file_name for file_name in args[:-1] if file_name.lower().endswith(".pdf")]
+        pdf_files = [file_name for file_name in args[:-1]
+                     if file_name.lower().endswith(".pdf")]
+    if len(args) == 1:
+        print("No arguments found, using gui")
+        fl = FileLoader()
+        fl.create_buttons()
+        fl.run()
+        pdf_files = fl.get_file_paths()
 
-    # # sort files
-    # pdf_files = sorted(pdf_files)
-    #
-    # print("Merging order:")
-    # print("\n".join(pdf_files))
-    # if input("Reverse order? (y/n)\t").lower() == 'y':
-    #     pdf_files.reverse()
-    #     print("Reversed.")
+    # pdf_files = sorted(pdf_files, key=lambda x: (x.lower(), natural_sort(x)))
+    for i, f in enumerate(pdf_files):
+        print(f"{i + 1}. {f}")
+    proceed = input("Proceed? (y/n)\t").lower() == 'y'
+    if not proceed:
+        return
 
     output_name = args[-1]
-    output_name = output_name + ".pdf" if not output_name.endswith(".pdf") else output_name
+    output_name = output_name + \
+        ".pdf" if not output_name.endswith(".pdf") else output_name
 
     toc = TableOfContent(pdf_files, output_name)
 
