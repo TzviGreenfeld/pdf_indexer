@@ -17,7 +17,16 @@ low priority:
     - add page numbers
 
 """
-
+class CustomPDF(FPDF):
+    def footer(self):
+        # Skip footer on first page (TOC)
+        if self.page_no() > 1:
+            # Position at 15mm from bottom
+            self.set_y(-15)
+            self.set_text_color(0)
+            self.set_font("Arial", "I", 8)
+            # Page number right-aligned
+            self.cell(0, 10, str(self.page_no()), 0, 0, 'R')
 
 
 def is_hebrew(s):
@@ -29,15 +38,15 @@ class TableOfContent:
     LINE_WIDTH = 180
     LINE_HEIGHT = 10
 
-    def __init__(self, files: list, file_name=None, bookmark=True):
+    def __init__(self, files: list, file_name=None, bookmark=True, replace_name_func=None):
         """"
         will only save file if file_name is not None
         """
-        self.pdf = FPDF(format='A4')
+        self.pdf = CustomPDF(format='A4')
         self.pdf.add_font('SansHeb', '', 'IBMPlexSansHebrew-ExtraLight.ttf', uni=True)  # hebrew
         self.files = files
         self.file_len = -1
-        self.pages_data = self.extract_data()
+        self.pages_data = self.extract_data(replace_name_func)
         # create_table_of_content also updates self.file_len
         self.index = self.create_table_of_content()
 
@@ -66,12 +75,17 @@ class TableOfContent:
         self.file_len = curr_page_num - 1
         return index
 
-    def extract_data(self):
+    # replace_name_func is a function that takes a string and returns a string
+    def extract_data(self, replace_name_func=None):
         files_data = []
         for file_name in self.files:
             curr_len = len(PdfReader(fname=file_name).pages)
             # get file name without extension and path
-            curr_name = file_name[file_name.rfind("/") + 1: file_name.find('.pdf')]
+            if replace_name_func is not None:
+                curr_name = replace_name_func(file_name)
+            else:
+                curr_name = file_name[file_name.rfind("/") + 1: file_name.find('.pdf')]
+
             files_data.append((curr_name, curr_len))
         return files_data
 
@@ -197,7 +211,7 @@ class TableOfContent:
         self.pdf.set_x(self.pdf.l_margin)
         self.pdf.set_y(self.pdf.t_margin)
         self.pdf.cell(w, self.LINE_HEIGHT, txt=credit, align="C", link=link)
-        
+
 
 def main(args):
     if len(args) == 1:
