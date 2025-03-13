@@ -39,3 +39,9 @@ if uploaded_files:
                 os.remove(path)
             except OSError:
                 pass
+
+st.markdown("""
+<div style="position: fixed; bottom: 10px; left: 0; width: 100%; padding: 10px; text-align: center;">
+    Tzvi Greenfeld 🤖 <a href="https://github.com/TzviGreenfeld/pdf_indexer" target="_blank">View on GitHub</a>
+</div>
+""", unsafe_allow_html=True)
