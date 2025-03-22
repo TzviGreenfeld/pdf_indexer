@@ -15,7 +15,9 @@ st.write("""
 uploaded_files = st.file_uploader("Upload PDF files", type="pdf", accept_multiple_files=True)
 
 if uploaded_files:
-    output_file = "indexed_output.pdf"
+    # 
+    output_file_name = st.text_input("Output file name", "indexed")
+    output_file_name = f"{output_file_name}" if output_file_name.endswith(".pdf") else f"{output_file_name}.pdf" 
     temp_files = []
     names = {}
     for uploaded_file in uploaded_files:
@@ -27,10 +29,10 @@ if uploaded_files:
 
     try:
         replace_name_func = lambda x: names.get(x, x)
-        toc = TableOfContent(temp_files, output_file, replace_name_func=replace_name_func)
+        toc = TableOfContent(temp_files, output_file_name, replace_name_func=replace_name_func)
 
-        with open(output_file, "rb") as f:
-            st.download_button("Download Indexed PDF", f, file_name=output_file, mime="application/pdf")
+        with open(output_file_name, "rb") as f:
+            st.download_button("Download Indexed PDF", f, file_name=output_file_name, mime="application/pdf")
 
     finally:
         # Cleanup temporary files
@@ -42,6 +44,6 @@ if uploaded_files:
 
 st.markdown("""
 <div style="position: fixed; bottom: 10px; left: 0; width: 100%; padding: 10px; text-align: center;">
-    Tzvi Greenfeld 🤖 <a href="https://github.com/TzviGreenfeld/pdf_indexer" target="_blank">View on GitHub</a>
+    Tzvi Greenfeld 🤖 <a href="https://github.com/TzviGreenfeld/pdf_indexer" target="_blank">View on GitHub</a> 
 </div>
 """, unsafe_allow_html=True)
