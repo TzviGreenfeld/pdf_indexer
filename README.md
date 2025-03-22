@@ -1,6 +1,7 @@
 # PDF indexer
 
-Merges pdf files and creates an  table of content psge + bookmarks
+Merges pdf files and creates an  table of content psge + bookmarks.
+You can run it locally or simply go to [pdfindexer.streamlit.app](https://pdfindexer.streamlit.app/)
 
 ## Table of Contents
 
